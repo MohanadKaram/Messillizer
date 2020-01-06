@@ -25,12 +25,14 @@ FILE_FORMATS = {
     "Word": [".docx", ".doc", ".dotx", ".docm"],
     "Excel": [".xls", ".xlsx"]
 }
+
 # Defualt thumbnail file name dictionary
 DEFUALT_THUMBNAILS = {
     "Image": "Image.png", "Video": "Video.png", "Document": "Document.png", "Archive": "Archive.png",
     "Audio": "Audio.png", "Plaintext": "Plaintext.png", "MP3": "MP3.png", "PDF": "PDF.png",
     "Word": "Word.png", "Excel": "Excel.png", "File": "File.png"
 }
+
 # Make a dictionary for every extension to have a file format
 EXTENSIONS = {extension: file_format
               for file_format, extensions in FILE_FORMATS.items()
@@ -38,6 +40,7 @@ EXTENSIONS = {extension: file_format
 # Get the thumbnails folder path
 THUMBNAILS_DIR = os.path.abspath(os.curdir) + "\Thumbnails data\\"
 DEFAULT_THUMBNAILS_DIR = os.path.abspath(os.curdir) + "\Thumbnails\\"
+
 # Global variables
 FILES = []
 FOLDERS = []
@@ -76,37 +79,6 @@ def add_files(label, button):
             button["state"] = "normal"
 
 
-def add_files_to_page(count, prev, label, next):
-    browse_for_files()
-    update_file_frames(count, prev, label, next)
-
-
-def browse_for_all_files():
-    path = ""
-    folder = filedialog.Directory(initialdir=os.path.dirname(path))
-    path = folder.show()
-    for entry in os.scandir(path):
-        if entry.is_file():
-            entry = entry.path.replace("\\", "/")
-            if entry not in FILES:
-                FILES.append(entry)
-
-
-def add_all_files(label, button):
-    browse_for_all_files()
-    # If there are items in FILES show there number on the label
-    if FILES:
-        label["text"] = "Selected " + str(len(FILES)) + " Files"
-        # And if there are selected folders activate the Next button
-        if FOLDERS:
-            button["state"] = "normal"
-
-
-def add_all_files_to_page(count, prev, label, next):
-    browse_for_all_files()
-    update_file_frames(count, prev, label, next)
-
-
 # Add folders to FOLDERS
 def browse_for_folders(coming_from):
     folder_path = ""
@@ -132,6 +104,43 @@ def add_folders(label, button):
         label["text"] = "Selected " + str(len(FOLDERS)) + " Folders"
         # And if there are selected files activate the Next button
         if FILES:
+            button["state"] = "normal"
+
+
+# Browse for files and update the file frames
+def add_files_to_page(count, prev, label, next):
+    browse_for_files()
+    update_file_frames(count, prev, label, next)
+
+
+# Browse for all the files in a certain directory and add them to FILES
+def browse_for_all_files():
+    path = ""
+    folder = filedialog.Directory(initialdir=os.path.dirname(path))
+    path = folder.show()
+    # Iterate over each item in the directory and check if it's a file
+    for entry in os.scandir(path):
+        if entry.is_file():
+            # Modify the path name and add it to FILES
+            entry = entry.path.replace("\\", "/")
+            if entry not in FILES:
+                FILES.append(entry)
+
+
+# Browse for all the files in a certain directory and update the file frames
+def add_all_files_to_page(count, prev, label, next):
+    browse_for_all_files()
+    update_file_frames(count, prev, label, next)
+
+
+# Add all files from a directory and update the first page label text
+def add_all_files(label, button):
+    browse_for_all_files()
+    # If there are items in FILES show there number on the label
+    if FILES:
+        label["text"] = "Selected " + str(len(FILES)) + " Files"
+        # And if there are selected folders activate the Next button
+        if FOLDERS:
             button["state"] = "normal"
 
 
@@ -161,7 +170,7 @@ def defualt_thumbnail(file, place):
     # Open the Image and get it's size (for the thumbnail function)
     img = Image.open(DEFAULT_THUMBNAILS_DIR + file)
     width, height = img.size
-    # Check the given frame place 
+    # Check the given frame place
     # And thumbnail the image by setting it's size and getting it's path accordingly
     if place == "Left":
         img.thumbnail(SMALL_SIZE)
@@ -181,7 +190,7 @@ def defualt_thumbnail(file, place):
 def create_thumbnail(path, place):
     # Get the global variable SONG_NAME
     global SONG_NAME
-    # Get the file's extension from it's path 
+    # Get the file's extension from it's path
     file_name = path_leaf(path)
     extension = os.path.splitext(file_name)[1].lower()
     # Check if the extinsion is in the preset EXTENSIONS
@@ -253,8 +262,10 @@ def empty_thumbnails():
             os.unlink(file_object_path)
 
 
+# Update the file frames
 def update_file_frames(count, prev, label, next):
     global SELECTED, SONG_NAME
+    # Update the file counter
     count["text"] = (str(SELECTED + 1) + "/" + str(len(FILES)))
     # Update the middle frame label
     try:
@@ -350,7 +361,7 @@ def nav_file(count, prev, label, next, pressed):
         else:
             return
     update_file_frames(count, prev, label, next)
-    
+
 
 # Open the current selected file
 def open_file(event=None):
@@ -359,7 +370,7 @@ def open_file(event=None):
 
 # Deselect a button when selected twice
 def press(var, button, event):
-    # Get the global variable of the current key state 
+    # Get the global variable of the current key state
     global KEY_STATE
     # If a shortcut gets pressed select the corresponding button
     if event == "Shortcut":
@@ -383,29 +394,38 @@ def press(var, button, event):
             KEY_STATE = "Move"
 
 
+# Delete the selected file
 def delete(count, prev, label, next):
+    # Show a warning message of deleting the file with yes and no buttons
     MsgBox = messagebox.askquestion('Delete file', 'Are you sure you want to permanently delete this file?', icon='warning')
     if MsgBox == 'yes':
+        # Remove the file from MOVE, COPY and FILES
         curr_file = FILES[SELECTED]
         if curr_file in MOVE:
             del MOVE[curr_file]
         if curr_file in COPY:
             del COPY[curr_file]
         FILES.remove(curr_file)
+        # Try to delete the file
         try:
             os.remove(curr_file)
             messagebox.showinfo('Deleted', 'This file was permanetly deleted.')
+        # Except the file isn't there in the first place
         except:
             messagebox.showinfo('Error', "This file doesn't exist anymore.")
+        # Update the file frames
         update_file_frames(count, prev, label, next)
 
 
+# Start the operation
 def done():
     global COPY, MOVE
+    # Get the number of the operations that need to be done
     items = len(MOVE)
     for file in COPY:
         for dest in COPY[file]:
             items += 1
+    # Make the top-level window of the progress bar
     prog = Toplevel(root)
     prog.minsize(200, 70)
     progFrame = Frame(prog, bg="#333333", width=250, height=70)
@@ -415,32 +435,34 @@ def done():
     progress_label.pack(pady=5)
     progress = Progressbar(progFrame, orient=HORIZONTAL, maximum=items, length=200, mode='determinate')
     progress.pack(pady=5)
-    #x = threading.Thread(target=add_progress, args=(progress))
+    # Do all the copying
     for file in COPY:
         for dest in COPY[file]:
             try:
                 shutil.copy2(file, dest)
+            # Except there is a file with the same name
             except shutil.SameFileError:
                 messagebox.showinfo('Error', "Unable to copy " + path_leaf(file) + " to " +
                                     dest + " which has a file with the same name.")
                 pass
+            # Update the progress bar
             progress['value'] += 1
-            progress.update()        
+            progress.update()
+    # Do all the moving
     for file in MOVE:
         try:
             shutil.move(file, MOVE[file])
+        # Except there is a file with the same name
         except shutil.Error:
             messagebox.showinfo('Error', "Unable to move " + path_leaf(file) + " to " +
                                 MOVE[file] + " which has a file with the same name.")
             pass
+        # Update the progress bar
         progress['value'] += 1
         progress.update()
+    # Show the "DONE!" message and close the program
     messagebox.showinfo('Done', 'Done!')
     root.destroy()
-
-
-def add_progress(progress):
-    progress['value'] += 1
 
 
 # Class for folder frames
@@ -598,9 +620,10 @@ def load_bottomFrame():
     # Create a folder frame for each item in FOLDERS
     for i in range(len(FOLDERS)):
         folderFrame = Folder(BOTTOMFRAME, FOLDERS[i])
-    add_folder_frame = AddFolder(BOTTOMFRAME) 
+    add_folder_frame = AddFolder(BOTTOMFRAME)
 
 
+# Makes sure that the entered character is alpha, decimal or none
 def validate(P):
     if P:
         P = P[-1]
@@ -610,14 +633,17 @@ def validate(P):
         return False
 
 
+# Set the character limit
 def character_limit(entry_text):
     text = str(entry_text.get())
     if len(text) > 0:
-        entry_text.set(text[-1])       
+        entry_text.set(text[-1])
 
 
+# Apply the shortcut settings
 def apply_shortcuts(left, right, copy, move, window):
     global CO_SHORT, MV_SHORT, PRV_SHORT, NXT_SHORT
+    # Check that every entry is filled with different keys
     shorts = [left, right, copy, move]
     for short in shorts:
         if shorts.count(short) > 1:
@@ -626,73 +652,80 @@ def apply_shortcuts(left, right, copy, move, window):
         if not short:
             messagebox.showinfo('Error', "Please make sure to fill all the shortcuts")
             return
+    # Unbind all the current shortcuts
     page_1.co_button.unbind_all(CO_SHORT)
     page_1.mv_button.unbind_all(MV_SHORT)
     page_1.next_file_lbl.unbind_all(NXT_SHORT)
     page_1.prev_file_lbl.unbind_all(PRV_SHORT)
+    # Update the global shortcuts
     PRV_SHORT = str(left)
     NXT_SHORT = str(right)
     CO_SHORT = str(copy)
     MV_SHORT = str(move)
+    # Bind all the shortcuts
     page_1.co_button.bind_all(CO_SHORT, lambda label: press(1, page_1.co_button, "Shortcut"))
     page_1.mv_button.bind_all(MV_SHORT, lambda label: press(2, page_1.mv_button, "Shortcut"))
     page_1.next_file_lbl.bind_all(NXT_SHORT, lambda label: nav_file(page_1.file_count_lbl, page_1.prev_file_lbl,
                                                                     page_1.file_lbl, page_1.next_file_lbl, "Next"))
     page_1.prev_file_lbl.bind_all(PRV_SHORT, lambda label: nav_file(page_1.file_count_lbl, page_1.prev_file_lbl,
                                                                     page_1.file_lbl, page_1.next_file_lbl, "Prev"))
+    # Close the window
     window.destroy()
 
 
+# Class for shortcuts' labels
 class Shortcut_Label:
     def __init__(self, parent, text, row, column):
         self = Label(parent, text=text, bg="#333333", fg="#ffffff", font="Verdana 10 bold")
         self.grid(row=row, column=column, sticky="w", padx=5, pady=5)
 
 
+# Class for shortcuts' entrys
 class Shortcut_Entry:
     def __init__(self, parent, validate, text, row, column):
         self = Entry(parent, width="1", font="Verdana 10 bold", validate='all',
-                        validatecommand=(validate, '%P'), textvariable=text)
+                     validatecommand=(validate, '%P'), textvariable=text)
         text.trace("w", lambda *args: character_limit(text))
         self.grid(row=row, column=column, padx=5, pady=5, ipadx=2)
 
 
+# Shortcuts options menu
 def shortcuts():
     global CO_SHORT, MV_SHORT, NXT_SHORT, PRV_SHORT
+    # Make the top-level window of the shortcuts options
     short = Toplevel(root)
     short.title("Shortcuts")
     short.configure(bg="#333333", width=250, height=140)
     short.minsize(330, 140)
-
+    # Shortcuts label
     shortcuts_label = Label(short, text="Shortcuts:", bg="#333333", fg="#ffffff", bd=0, relief=RIDGE, font="Verdana 10 bold")
     shortcuts_label.pack(side=TOP, padx=5, pady=5)
-
+    # Main frame
     shortFrame = Frame(short, bg="#333333", width=210, height=70)
     shortFrame.pack(expand=TRUE, fill='both', padx=20)
     shortFrame.grid_propagate(0)
-
-    left_label =Shortcut_Label(shortFrame, "Previous file:", 0, 0)
+    # Labels
+    left_label = Shortcut_Label(shortFrame, "Previous file:", 0, 0)
     right_label = Shortcut_Label(shortFrame, "          Next file:", 0, 2)
     copy_label = Shortcut_Label(shortFrame, "Copy:", 1, 0)
     move_label = Shortcut_Label(shortFrame, "          Move:", 1, 2)
-
+    # Entry validation
     vcmd = (root.register(validate))
-
+    # Entry text
     left_text = StringVar()
     right_text = StringVar()
     copy_text = StringVar()
     move_text = StringVar()
-    
+    # Entries
     left_entry = Shortcut_Entry(shortFrame, vcmd, left_text, 0, 1)
     right_entry = Shortcut_Entry(shortFrame, vcmd, right_text, 0, 3)
     copy_entry = Shortcut_Entry(shortFrame, vcmd, copy_text, 1, 1)
     move_entry = Shortcut_Entry(shortFrame, vcmd, move_text, 1, 3)
-    # try
-
+    # Apply button
     apply_btn = Button(short, text="Apply", bg="#cccccc", command=lambda: apply_shortcuts(
                        left_text.get(), right_text.get(), copy_text.get(), move_text.get(), short))
     apply_btn.pack(side=RIGHT, padx=5, pady=5)
-
+    # Cancel button
     cancel_btn = Button(short, text="Cancel", bg="#cccccc", command=short.destroy)
     cancel_btn.pack(side=RIGHT, padx=5, pady=5)
 
@@ -842,7 +875,7 @@ class Page_1(Frame):
         next_btn_lbl.bind("<Button-1>", lambda label: nav_file(self.file_count_lbl, self.prev_file_lbl,
                                                                self.file_lbl, self.next_file_lbl, "Next"))
         next_btn_lbl.pack(side=RIGHT)
-        
+
         # Files frame widgets
         # Prev file frame
         self.prev_file_lbl = Label(LeftFilesFrame, bg="#333333", fg="#ffffff", font="Verdana 6", compound=TOP)
@@ -901,7 +934,7 @@ class Page_1(Frame):
                                 self.file_count_lbl, self.prev_file_lbl, self.file_lbl, self.next_file_lbl))
         fileMenu.entryconfigure(3, command=lambda: browse_for_folders("Page"))
 
-    
+
 # Class the root to be the starting page and pack it
 start_page = StartPage(root)
 page_1 = Page_1(root)
@@ -909,11 +942,9 @@ start_page.pack()
 
 
 # Run the program
-def main(): 
+def main():
     root.mainloop()
 
 
 if __name__ == '__main__':
     main()
-    
-    #try12345685956
