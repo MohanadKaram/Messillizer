@@ -687,7 +687,6 @@ def shortcuts():
     right_entry = Shortcut_Entry(shortFrame, vcmd, right_text, 0, 3)
     copy_entry = Shortcut_Entry(shortFrame, vcmd, copy_text, 1, 1)
     move_entry = Shortcut_Entry(shortFrame, vcmd, move_text, 1, 3)
-    #hate
 
     apply_btn = Button(short, text="Apply", bg="#cccccc", command=lambda: apply_shortcuts(
                        left_text.get(), right_text.get(), copy_text.get(), move_text.get(), short))
